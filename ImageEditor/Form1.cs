@@ -15,9 +15,13 @@ namespace ImageEditor
         public Form1()
         {
             InitializeComponent();
+            tabPage1.Enabled = false;
+            tabPage2.Enabled = false;
+            tabPage3.Enabled = false;
         }
 
         private Image Img;
+        private Image CroppedImage;
         private Size OriginalImageSize;
         private Size ModifiedImageSize;
 
@@ -43,37 +47,15 @@ namespace ImageEditor
             if (Dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 Img = Image.FromFile(Dlg.FileName);
-                //Image.FromFile(String) method creates an image from the specifed file, here dlg.Filename contains the name of the file from which to create the image
                 LoadImage();
+                tabPage3.Enabled = true;
             }
 
         }
         private void LoadImage()
         {
-            //we set the picturebox size according to image, we can get image width and height with the help of Image.Width and Image.height properties.
-            int imgWidth = Img.Width;
-            int imghieght = Img.Height;
-            PictureBox1.Width = imgWidth;
-            PictureBox1.Height = imghieght;
+            PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             PictureBox1.Image = Img;
-            PictureBoxLocation();
-            OriginalImageSize = new Size(imgWidth, imghieght);
-
-            SetResizeInfo();
-        }
-        private void PictureBoxLocation()
-        {
-            int _x = 0;
-            int _y = 0;
-            if (SplitContainer1.Panel1.Width > PictureBox1.Width)
-            {
-                _x = (SplitContainer1.Panel1.Width - PictureBox1.Width) / 2;
-            }
-            if (SplitContainer1.Panel1.Height > PictureBox1.Height)
-            {
-                _y = (SplitContainer1.Panel1.Height - PictureBox1.Height) / 2;
-            }
-            PictureBox1.Location = new Point(_x, _y);
         }
 
         private void SetResizeInfo()
@@ -84,14 +66,14 @@ namespace ImageEditor
 
         }
 
-        private void SplitContainer1_Panel1_Resize(object sender, EventArgs e)
-        {
-            PictureBoxLocation();
-        }
+        //private void SplitContainer1_Panel1_Resize(object sender, EventArgs e)
+        //{
+        //    PictureBoxLocation();
+        //}
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Bitmap bm_source = new Bitmap(PictureBox1.Image);
+            Bitmap bm_source = new Bitmap(pictureBox2.Image);
             // Make a bitmap for the result.
             Bitmap bm_dest = new Bitmap(Convert.ToInt32(ModifiedImageSize.Width), Convert.ToInt32(ModifiedImageSize.Height));
             // Make a Graphics object for the result Bitmap.
@@ -99,10 +81,9 @@ namespace ImageEditor
             // Copy the source image into the destination bitmap.
             gr_dest.DrawImage(bm_source, 0, 0, bm_dest.Width + 1, bm_dest.Height + 1);
             // Display the result.
-            PictureBox1.Image = bm_dest;
-            PictureBox1.Width = bm_dest.Width;
-            PictureBox1.Height = bm_dest.Height;
-            PictureBoxLocation();
+            pictureBox2.Image = bm_dest;
+            pictureBox2.Width = bm_dest.Width;
+            pictureBox2.Height = bm_dest.Height;
         }
 
         private void DomainUpDown1_SelectedItemChanged_1(object sender, EventArgs e)
@@ -169,11 +150,15 @@ namespace ImageEditor
                 //set image attributes
                 g.DrawImage(OriginalImage, 0, 0, rect, GraphicsUnit.Pixel);
 
-                PictureBox1.Image = _img;
-                PictureBox1.Width = _img.Width;
-                PictureBox1.Height = _img.Height;
-                PictureBoxLocation();
+                pictureBox2.Image = _img;
                 CropButton.Enabled = false;
+                int imgWidth = _img.Width;
+                int imghieght = _img.Height;
+                OriginalImageSize = new Size(imgWidth, imghieght);
+                SetResizeInfo();
+                tabPage1.Enabled = true;
+                tabPage2.Enabled = true;
+                CroppedImage = _img;
             }
             catch (Exception ex)
             {
@@ -325,14 +310,12 @@ namespace ImageEditor
 
 
 
-            Image _img = Img;
-            //PictureBox1.Image
+            Image _img = CroppedImage;
             Graphics _g = default(Graphics);
             Bitmap bm_dest = new Bitmap(Convert.ToInt32(_img.Width), Convert.ToInt32(_img.Height));
             _g = Graphics.FromImage(bm_dest);
             _g.DrawImage(_img, new Rectangle(0, 0, bm_dest.Width + 1, bm_dest.Height + 1), 0, 0, bm_dest.Width + 1, bm_dest.Height + 1, GraphicsUnit.Pixel, imageAttributes);
-            PictureBox1.Image = bm_dest;
-
+            pictureBox2.Image = bm_dest;
         }
 
         private void btnRotateLeft_Click(object sender, EventArgs e)
