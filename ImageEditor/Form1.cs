@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using Tesseract;
 namespace ImageEditor
 {
     public partial class Form1 : Form
@@ -54,7 +55,6 @@ namespace ImageEditor
         }
         private void LoadImage()
         {
-            PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             PictureBox1.Image = Img;
         }
 
@@ -66,21 +66,12 @@ namespace ImageEditor
 
         }
 
-        //private void SplitContainer1_Panel1_Resize(object sender, EventArgs e)
-        //{
-        //    PictureBoxLocation();
-        //}
-
         private void button1_Click(object sender, EventArgs e)
         {
             Bitmap bm_source = new Bitmap(pictureBox2.Image);
-            // Make a bitmap for the result.
             Bitmap bm_dest = new Bitmap(Convert.ToInt32(ModifiedImageSize.Width), Convert.ToInt32(ModifiedImageSize.Height));
-            // Make a Graphics object for the result Bitmap.
             Graphics gr_dest = Graphics.FromImage(bm_dest);
-            // Copy the source image into the destination bitmap.
             gr_dest.DrawImage(bm_source, 0, 0, bm_dest.Width + 1, bm_dest.Height + 1);
-            // Display the result.
             pictureBox2.Image = bm_dest;
             pictureBox2.Width = bm_dest.Width;
             pictureBox2.Height = bm_dest.Height;
@@ -137,9 +128,7 @@ namespace ImageEditor
                     return;
                 }
                 Rectangle rect = new Rectangle(cropX, cropY, cropWidth, cropHeight);
-                //First we define a rectangle with the help of already calculated points
-                Bitmap OriginalImage = new Bitmap(PictureBox1.Image, PictureBox1.Width, PictureBox1.Height);
-                //Original image
+                Bitmap OriginalImage = new Bitmap(PictureBox1.Image, PictureBox1.Image.Width, PictureBox1.Image.Height);
                 Bitmap _img = new Bitmap(cropWidth, cropHeight);
                 // for cropinf image
                 Graphics g = Graphics.FromImage(_img);
@@ -340,6 +329,17 @@ namespace ImageEditor
         {
             PictureBox1.Image.RotateFlip(RotateFlipType.RotateNoneFlipY);
             PictureBox1.Refresh();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var ocrengine = new TesseractEngine(@".\tessdata", "eng", EngineMode.Default);
+            //var img = Pix.LoadFromFile(@"phototest.tif");
+            Bitmap bitmapImage = new Bitmap(pictureBox2.Image);
+           
+            var img = PixConverter.ToPix(bitmapImage);
+            var res = ocrengine.Process(img);
+            textBox1.Text = res.GetText();
         }
     }
 }
