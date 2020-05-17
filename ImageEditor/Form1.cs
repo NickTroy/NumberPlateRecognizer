@@ -334,7 +334,6 @@ namespace ImageEditor
         private void button2_Click(object sender, EventArgs e)
         {
             var ocrengine = new TesseractEngine(@".\tessdata", "eng", EngineMode.Default);
-            //var img = Pix.LoadFromFile(@"phototest.tif");
             Bitmap bitmapImage = new Bitmap(pictureBox2.Image);
            
             var img = PixConverter.ToPix(bitmapImage);
