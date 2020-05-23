@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using Tesseract;
+using Emgu.CV;
+using Emgu.CV.Structure;
+using Emgu.CV.CvEnum;
 namespace ImageEditor
 {
     public partial class Form1 : Form
@@ -339,6 +338,30 @@ namespace ImageEditor
             var img = PixConverter.ToPix(bitmapImage);
             var res = ocrengine.Process(img);
             textBox1.Text = res.GetText();
+        }
+
+        public void DetectNumberLocation(Bitmap image)
+        {
+            Image<Bgr, byte> mainImage = new Image<Bgr, byte>(image);
+            CascadeClassifier cascadeClassifier = new CascadeClassifier(@".\haarcascade_classifier.xml");
+            using (Image<Gray, Byte> grayFrame = new Image<Gray, Byte>(image))
+            {
+                var face = cascadeClassifier.DetectMultiScale(grayFrame, 1.1, 8)[0];
+                mainImage.Draw(face, new Bgr(Color.Blue), 2);
+                Bitmap detectedNumber = new Bitmap(face.Width, face.Height);
+                Graphics g = Graphics.FromImage(detectedNumber);
+                g.DrawImage(mainImage.ToBitmap(), 0, 0, face, GraphicsUnit.Pixel);
+
+                PictureBox1.Image = mainImage.ToBitmap();
+                pictureBox2.Image = detectedNumber;
+            }
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Bitmap bitmapImage = new Bitmap(PictureBox1.Image);
+            DetectNumberLocation(bitmapImage);
         }
     }
 }
