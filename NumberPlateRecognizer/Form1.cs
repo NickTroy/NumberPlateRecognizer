@@ -8,6 +8,8 @@ using Tesseract;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using Emgu.CV.CvEnum;
+using System.Collections.Generic;
+
 namespace ImageEditor
 {
     public partial class Form1 : Form
@@ -332,13 +334,88 @@ namespace ImageEditor
 
         private void button2_Click(object sender, EventArgs e)
         {
+            Bitmap detectedNumberImage = new Bitmap(pictureBox2.Image);
+            Image<Gray, Byte> bgrNumberImage = new Image<Gray, Byte>(detectedNumberImage);
+            double threshold = bgrNumberImage.GetAverage().Intensity;
+            Image<Gray, Byte> grayedNumberImage = bgrNumberImage.ThresholdBinary(new Gray(threshold), new Gray(255));
+
+
+            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            Mat hierarchy = new Mat();
+
+            CvInvoke.FindContours(grayedNumberImage, contours, hierarchy, Emgu.CV.CvEnum.RetrType.List, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+
+            List<Rectangle> charactersBoundingRectangles = new List<Rectangle>();
+            if (contours.Size > 0)
+            {
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
+                    if ((rect.Width > detectedNumberImage.Width / 8) & (rect.Width < detectedNumberImage.Width / 3))
+                    {
+                        charactersBoundingRectangles.Add(rect);
+                    }
+                }
+            }
+
+            charactersBoundingRectangles = charactersBoundingRectangles.OrderBy(o => o.X).ToList();
+
+            List<Bitmap> charactersImagesTopRow = new List<Bitmap>();
+            List<Bitmap> charactersImagesBottomRow = new List<Bitmap>();
+
+            using (Graphics g = Graphics.FromImage(detectedNumberImage))
+            {
+                foreach (Rectangle boundingRectangle in charactersBoundingRectangles)
+                {
+                    g.DrawRectangle(new Pen(Color.Blue, 1), boundingRectangle);
+
+                    Bitmap characterBitmap = new Bitmap(boundingRectangle.Width, boundingRectangle.Height);
+
+                    using (Graphics gr = Graphics.FromImage(characterBitmap))
+                    {
+                        gr.DrawImage(detectedNumberImage, 0, 0, boundingRectangle, GraphicsUnit.Pixel);
+                    }
+                    if(boundingRectangle.Bottom < detectedNumberImage.Height * 0.6)
+                    {
+                        charactersImagesTopRow.Add(characterBitmap);
+                    } else
+                    {
+                        charactersImagesBottomRow.Add(characterBitmap);
+                    }
+                }
+                
+            }
+
+            
+            pictureBox2.Image = grayedNumberImage.ToBitmap();
+            pictureBox3.Image = detectedNumberImage;
+
+
+
+
             var ocrengine = new TesseractEngine(@".\tessdata", "eng", EngineMode.Default);
-            Bitmap bitmapImage = new Bitmap(pictureBox2.Image);
-           
-            var img = PixConverter.ToPix(bitmapImage);
-            var res = ocrengine.Process(img);
-            textBox1.Text = res.GetText();
+            ocrengine.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+            List<string> numberCharacterListTopRow = new List<string>();
+            List<string> numberCharacterListBottomRow = new List<string>();
+            foreach (Bitmap characterImage in charactersImagesTopRow)
+            {
+                var page = ocrengine.Process(PixConverter.ToPix(characterImage), PageSegMode.SingleChar);
+                string character = page.GetText();
+                numberCharacterListTopRow.Add(character);
+                page.Dispose();
+            }
+
+            foreach (Bitmap characterImage in charactersImagesBottomRow)
+            {
+                var page = ocrengine.Process(PixConverter.ToPix(characterImage), PageSegMode.SingleChar);
+                string character = page.GetText();
+                numberCharacterListBottomRow.Add(character);
+                page.Dispose();
+            }
+            textBox1.Text = string.Join("", numberCharacterListTopRow) + System.Environment.NewLine + string.Join("", numberCharacterListBottomRow);
         }
+
 
         public void DetectNumberLocation(Bitmap image)
         {
